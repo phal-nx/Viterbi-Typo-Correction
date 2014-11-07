@@ -63,31 +63,38 @@ def calcMaxProbability():
         print(reversemapping[i], " is most likely paired with ", maxProbabilityState[i])
         
         
-
+'''
+Currently iterating through each character
+after '..' and 
+'''
 def viterbi(filename):
-    testmode=true
+    testmode=True
     viterbi = [{}]
     newOutput = ""
     prevorigletter = "b"
-    for line in infile:  # Iterate through remaining lines for testing
-        char= line.split[0]
+    for line in filename:  # Iterate through remaining lines for testing
+        char= line.split()[0]
         if ( '..' in line):
             testmode=true
         elif(testmode):
-            if (startofword):
-                newOutput += .index(max(initialprobs[mapping[char]] + outputprobs[mapping[char]]))  # Output probs is incorrect, not sure what to pass in
-                
+            if (prevorigletter == "_"):
+                #mostlikelyChar = reversemapping[ initialprobs[char] + outputprobs[char][char]]
+                #   mostLikelyChar= reversemapping[index(max(initialprobs[mapping[char]] + outputprobs[mapping[char]]))]  # Output probs is incorrect, not sure what to pass in
+                newOutput += mostLikelyChar
             else:
-                mostLikelyChar = max( maxProbabilityState[mapping[prevorigletter]] + stateprob[prevorigletter][mapping[char]] + outputprobs[x][t])  # Taking the Max but that's a val.
+                sumoflists = maxProbabilityState + stateprobs + outputprobs
+                mostLikelyChar = reversemapping[ sumoflists.index(max(maxProbabilityState[mapping[prevorigletter]] + stateprobs[prevorigletter][mapping[char]] + outputprobs[x][mapping[char]] for x in range(26))) % 26]
+                print(mostLikelyChar) 
+                #mostLikelyChar = max( maxProbabilityState[mapping[prevorigletter]] + stateprob[prevorigletter][mapping[char]] + outputprobs[x][char])  # Taking the Max but that's a val.
                 #  Unsure how to get the char to add to the new Output from the number
                 newOutput += mostLikelyChar
         prevorigletter = char
-
 
 
 def main():
     getData(sys.argv[1])
     calcProbability()
     calcMaxProbability()
+    viterbi(sys.argv[1])
     print ("The count of characters is: ", charactercount)
 main()
