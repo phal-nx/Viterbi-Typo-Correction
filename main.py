@@ -1,17 +1,18 @@
 import sys
 import string
 import math
+import pdb
 
 numofchars = 1
 mapping = { char:value for value,char in enumerate(string.ascii_lowercase)}
 reversemapping = dict(enumerate(string.ascii_lowercase))
 
-initialprobs = [1] * 26
+initialProbs = [1] * 26
 charactercount = [1] * 26
 outputtransitions = [[1 for i in range(26)]for j in range(26)]
 statetransitions = [[1 for i in range(26)]for j in range(26)]
-outputprobs = [[1 for i in range(26)]for j in range(26)]
-stateprobs = [[1 for i in range(26)]for j in range(26)]
+outputProbs = [[1 for i in range(26)]for j in range(26)]
+stateProbs = [[1 for i in range(26)]for j in range(26)]
 maxProbabilityState = dict()
 maxProbabilityOut = dict()
 
@@ -20,7 +21,7 @@ def getData(filename):
     global numofchars
     infile = open(filename)
     index = 0
-    prevorigletter =  'd'
+    prevOrigLetter =  'd'
         #  Training loop for data
     for line in infile:  # Iterate through lines of file
         if '..' in line:  # If its the end of training data
@@ -33,62 +34,83 @@ def getData(filename):
         elif words[0] == '_':  # If the start of a new word
             index = 0      # Reset index
         else:   # If in the middle of a word
-            statetransitions[mapping[prevorigletter]][mapping[words[0]]] += 1
+            statetransitions[mapping[prevOrigLetter]][mapping[words[0]]] += 1
             outputtransitions[mapping[words[0]]][mapping[words[1]]] += 1  
             index += 1
-            #print("statetransitions[",mapping[prevorigletter],"][mapping[",words[0],"]")
-        prevorigletter = words[0]
+            #print("statetransitions[",mapping[prevOrigLetter],"][mapping[",words[0],"]")
+        prevOrigLetter = words[0]
     infile.close()
 
 
 def calcProbability():
-    global initialprobs, charactercount, outputtransitions, statetransitions
-    global outputprobs, stateprobs
+    global initialProbs, charactercount, outputtransitions, statetransitions
+    global outputProbs, stateProbs
     numofchars = sum(charactercount)
     # Calculate all 3 probabilities
     for row in range(0,26):
         sumofoutputrow = sum(outputtransitions[row])
         sumofstaterow = sum (statetransitions[row])
         for column in range(0,26):
-            outputprobs[row][column] = math.log(outputtransitions[row][column]/sumofoutputrow)
-            stateprobs[row][column] = math.log(statetransitions[row][column]/sumofstaterow)
-            #print("Storing stateprobs [",row, "][",column,"] is ", math.log(statetransitions[row][column]/sumofstaterow))
-        initialprobs[row] = math.log(charactercount[row]/numofchars)
+            outputProbs[row][column] = math.log(outputtransitions[row][column]/sumofoutputrow)
+            stateProbs[row][column] = math.log(statetransitions[row][column]/sumofstaterow)
+            #print("Storing stateProbs [",row, "][",column,"] is ", math.log(statetransitions[row][column]/sumofstaterow))
+        initialProbs[row] = math.log(charactercount[row]/numofchars)
 
 
 def calcMaxProbability():
     global maxProbabilityOut, maxProbabilityState
     for i, character in enumerate(mapping):
-        maxProbabilityState[i] = reversemapping[stateprobs[i].index(max(stateprobs[i]))]
+        maxProbabilityState[i] = reversemapping[stateProbs[i].index(max(stateProbs[i]))]
         print(reversemapping[i], " is most likely paired with ", maxProbabilityState[i])
         
         
 '''
 Currently iterating through each character
-after '..' and 
+after '..' and getting the max of the sum
+of three different indexes of matrices.
+The the state probability from t-1 to x,
+from t-1 to t
+and output probabilities from 0 to 25 at t
+
+Takes the maximum of this addition and attempts
+to turn it into a character
 '''
 def viterbi(filename):
     testmode=True
     viterbi = [{}]
+    path={}
     newOutput = ""
-    prevorigletter = "b"
+    prevOrigLetter = "b" #  Dummy character
+    
     for line in filename:  # Iterate through remaining lines for testing
-        char= line.split()[0]
-        if ( '..' in line):
-            testmode=true
+        if ( '.' in line):
+            testmode=True
         elif(testmode):
-            if (prevorigletter == "_"):
-                #mostlikelyChar = reversemapping[ initialprobs[char] + outputprobs[char][char]]
-                #   mostLikelyChar= reversemapping[index(max(initialprobs[mapping[char]] + outputprobs[mapping[char]]))]  # Output probs is incorrect, not sure what to pass in
-                newOutput += mostLikelyChar
+            char= line.split()[0]
+            if (prevOrigLetter == "_"):         
+                for i in range(26):
+                    viterbi[0][i] = initialProbs[i] * outputProbs[i][char]
+                    #Add a list containing current the current char
+                    path[y] = [y]
+
+                
             else:
-                sumoflists = maxProbabilityState + stateprobs + outputprobs
-                mostLikelyChar = reversemapping[ sumoflists.index(max(maxProbabilityState[mapping[prevorigletter]] + stateprobs[prevorigletter][mapping[char]] + outputprobs[x][mapping[char]] for x in range(26))) % 26]
-                print(mostLikelyChar) 
-                #mostLikelyChar = max( maxProbabilityState[mapping[prevorigletter]] + stateprob[prevorigletter][mapping[char]] + outputprobs[x][char])  # Taking the Max but that's a val.
-                #  Unsure how to get the char to add to the new Output from the number
-                newOutput += mostLikelyChar
-        prevorigletter = char
+                #probability, mostLikelyChar = (max(( viterbi[mapping[prevOrigLetter]][x] + stateProbs[x][mapping[char]] + outputProbs[x][mapping[char]], x)  for x in range(26)))
+                #viterbi[i][mapping[char]] = probability
+                viterbi.append({})  # Add a new dictionary
+                newpath = {}
+                for i in range(26):
+                    # Sets the probability to viterbi[t-1][x] plus stateprobs[x][t] plus outputprobs[x][t]
+                    probability, mostLikelyChar = (max(( viterbi[mapping[prevOrigLetter]][x] + stateProbs[x][mapping[char]] + outputProbs[i][mapping[char]], x)  for x in range(26)))
+                    
+                    viterbi[char][i] = probability
+                    newpath[i] = path[mostLikelyChar] + [i]
+                                                                          
+                path = newpath
+                print(path) 
+                
+                
+            prevOrigLetter = char
 
 
 def main():
