@@ -87,9 +87,14 @@ def viterbi(filename):
             testmode=True
         elif(testmode):
             char= line.split()[0]
+            for i in range(26):
+                viterbi[0][i] = initialProbs[i] * outputProbs[i][mapping[line.split()[0]]]
+                #Add a list containing current the current char
+                path[y] = [y]
+
             if (prevOrigLetter == "_"):         
                 for i in range(26):
-                    viterbi[0][i] = initialProbs[i] * outputProbs[i][char]
+                    viterbi[0][i] = initialProbs[i] * outputProbs[i][mapping[char]]
                     #Add a list containing current the current char
                     path[y] = [y]
 
@@ -97,12 +102,12 @@ def viterbi(filename):
             else:
                 #probability, mostLikelyChar = (max(( viterbi[mapping[prevOrigLetter]][x] + stateProbs[x][mapping[char]] + outputProbs[x][mapping[char]], x)  for x in range(26)))
                 #viterbi[i][mapping[char]] = probability
+                pdb.set_trace()
                 viterbi.append({})  # Add a new dictionary
                 newpath = {}
                 for i in range(26):
                     # Sets the probability to viterbi[t-1][x] plus stateprobs[x][t] plus outputprobs[x][t]
                     probability, mostLikelyChar = (max(( viterbi[mapping[prevOrigLetter]][x] + stateProbs[x][mapping[char]] + outputProbs[i][mapping[char]], x)  for x in range(26)))
-                    
                     viterbi[char][i] = probability
                     newpath[i] = path[mostLikelyChar] + [i]
                                                                           
